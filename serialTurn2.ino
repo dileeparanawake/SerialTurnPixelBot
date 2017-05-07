@@ -28,6 +28,7 @@ int moveSteps;// number of steps the motor is to move
 int angle;
 int distanceInMM;
 int distance;
+int speed;
 
 int number = 0;
 String command = "";
@@ -52,7 +53,7 @@ String get_command(void) {
     input = char(incoming);
     input.toUpperCase();
 
-    if (input == "A" ||input == "D" ||input == "S" ||input == "W" ) { //looks for a value ( valid number - outside 0 -9) in the specified askii range
+    if (input == "A" ||input == "D" ||input == "S" ||input == "W"||input == "X" ) { //looks for a value ( valid number - outside 0 -9) in the specified askii range
 
       command = input;
       Serial.print ("\n\nThanks this command you've chosen is: ");
@@ -107,6 +108,13 @@ int get_md_number(void) {
   return number;
 }
 
+int motorDelayCalc(void){
+  if (number>10){
+    number = number/number;
+  }
+  motorDelay = 2200-(1000*number/10);
+  return motorDelay;
+}
 
 void turnAntiClockWise(){
   left1=4; left2=5; left3=6; left4=7;
@@ -231,6 +239,14 @@ void loop(){
           reverse();
       }
     }
+    else if (command == "X") {
+
+      instruction = "\n\nEnter the speed you'd like to set from 0-10\n";
+      confirmationMessage = "\n\nThanks you've set the speed to ";
+      number = get_md_number();
+      motorDelay = motorDelayCalc();
+      Serial.print(motorDelay);
+      }
   }
 
   while (moveCount<moveSteps) {
