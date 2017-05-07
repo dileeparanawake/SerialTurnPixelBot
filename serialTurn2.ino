@@ -1,12 +1,12 @@
 /*
 
-  Moves the robot forwads, backswards, left or right using
-  serial commands
+  Moves the robot forwads, backswards, left or right
+  and set speed useing srial commands
 
   Dileepa Ranawake)
 
   April 2017
-  Version 2.0
+  Version 2.1
 
  */
 
@@ -30,15 +30,15 @@ int distanceInMM;
 int distance;
 
 int number = 0;
-String direction = "";
+String command = "";
 String instruction = "";
 String confirmationMessage = "";
-int directionTrigger = 0;
+int commandTrigger = 0;
 
-String get_direction(void) {
+String get_command(void) {
 
-  direction = "";
-  Serial.print("\nType a direction and press enter\n\nA = Turn Left\nD = Turn Right\nW = Move Forward\nS = Move Backwards.\n");
+  command = "";
+  Serial.print("\nType a command and press enter\n\nA = Turn Left\nD = Turn Right\nW = Move Forward\nS = Move Backwards.\nX = Set speed.\n");
 
   while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
     Serial.read(); delay (100);
@@ -54,10 +54,10 @@ String get_direction(void) {
 
     if (input == "A" ||input == "D" ||input == "S" ||input == "W" ) { //looks for a value ( valid number - outside 0 -9) in the specified askii range
 
-      direction = input;
-      Serial.print ("\n\nThanks you've set the direction to: ");
-      Serial.println (direction);
-      directionTrigger = 1;
+      command = input;
+      Serial.print ("\n\nThanks this command you've chosen is: ");
+      Serial.println (command);
+      commandTrigger = 1;
       while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
         Serial.read(); delay (100);
       }
@@ -70,7 +70,7 @@ String get_direction(void) {
       }
     }
   }
-  return direction;
+  return command;
 }
 
 int get_md_number(void) {
@@ -93,14 +93,14 @@ int get_md_number(void) {
       delay(50);
       //Serial.print (confirmationMessage);
       //Serial.println (number);
-      directionTrigger = 0;
+      commandTrigger = 0;
       }
     else {
 
       Serial.println ("\nInvalid entry! Try again.\n"); //if not valid number returns an error
       while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
         Serial.read(); delay (100);
-        directionTrigger = 1;
+        commandTrigger = 1;
       }
     }
   }
@@ -180,12 +180,12 @@ void setup() {
 
 void loop(){
 
-  if (directionTrigger == 0) {
-    direction = get_direction();
+  if (commandTrigger == 0) {
+    command = get_command();
   }
-  if (directionTrigger ==1){
+  if (commandTrigger ==1){
 
-      if (direction == "A" || direction == "D"){
+      if (command == "A" || command == "D"){
 
         instruction = "\n\nEnter the angle you'd like to turn in degrees\n";
         confirmationMessage = "\n\nThanks you've set the angle in degrees to ";
@@ -199,16 +199,16 @@ void loop(){
           delay(1000);
         }
 
-        if (direction == "A"){
+        if (command == "A"){
           moveSteps = calculateAngleSteps(angle);
           turnAntiClockWise();
         }
-        else if (direction == "D") {
+        else if (command == "D") {
           moveSteps = calculateAngleSteps(angle);
           turnClockWise();
         }
       }
-      else if (direction == "W" || direction == "S") {
+      else if (command == "W" || command == "S") {
 
         instruction = "\n\nEnter the distance you'd like to move in mm\n";
         confirmationMessage = "\n\nThanks you've set the distance in mm to ";
@@ -222,11 +222,11 @@ void loop(){
           delay(1000);
         }
 
-        if (direction == "W"){
+        if (command == "W"){
           moveSteps = calculateDistanceSteps(distanceInMM);
           forwards();
         }
-        else if (direction == "S") {
+        else if (command == "S") {
           moveSteps = calculateDistanceSteps(distanceInMM);
           reverse();
       }
