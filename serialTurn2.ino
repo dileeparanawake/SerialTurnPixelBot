@@ -2,9 +2,11 @@
   Moves the robot forwads, backswards, left or right
   and set speed useing serial commands.
   Has stop move in situ feature
+  Has repeat last action feature
+  Has dynamic change of instruction in motion
   Dileepa Ranawake)
-  April 2017
-  Version 2.2
+  May 2017
+  Version 2.7
  */
 
 int motorDelay;
@@ -26,6 +28,7 @@ int angle;
 int distanceInMM;
 int distance;
 int speed;
+int repeatCount;
 
 int number = 0;
 String command = "";
@@ -36,7 +39,7 @@ int commandTrigger = 0;
 String get_command(void) {
 
   command = "";
-  Serial.print("\nType a command and press enter\n\nA = Turn Left\nD = Turn Right\nW = Move Forward\nS = Move Backwards.\nX = Set speed.\n");
+  Serial.print("\nType a command and press enter\n\nA = Turn Left.\nD = Turn Right.\nW = Move Forward.\nS = Move Backwards.\nX = Set speed.\nR = Repeat last action.\n");
 
   while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
     Serial.read(); delay (100);
@@ -50,7 +53,7 @@ String get_command(void) {
     input = char(incoming);
     input.toUpperCase();
 
-    if (input == "A" ||input == "D" ||input == "S" ||input == "W"||input == "X" ) { //looks for a value ( valid number - outside 0 -9) in the specified askii range
+    if (input == "A" ||input == "D" ||input == "S" ||input == "W"||input == "X" ||input =="R") { //looks for a value ( valid number - outside 0 -9) in the specified askii range
 
       command = input;
       Serial.print ("\n\nThanks this command you've chosen is: ");
@@ -203,6 +206,10 @@ int stopMove(){
 }
 
 void setup() {
+
+  while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
+  Serial.read(); delay (100);
+  }
   leftForwards();
   rightForwards();
 
@@ -210,75 +217,73 @@ void setup() {
   pinMode(left2,OUTPUT);
   pinMode(left3,OUTPUT);
   pinMode(left4,OUTPUT);
-  //digitalWrite(left1,HIGH);
 
   pinMode(right1,OUTPUT);
   pinMode(right2,OUTPUT);
   pinMode(right3,OUTPUT);
   pinMode(right4,OUTPUT);
-  //digitalWrite(right1,HIGH);
 
   motorDelay=2000;
   angle = 0;
   moveCount=0;
 
   Serial.begin(9600);
-
-
-
 }
 
 void loop(){
 
   if (commandTrigger == 0) {
+    command ="";
+    number =0;
     command = get_command();
   }
   if (commandTrigger ==1){
 
-      if (command == "A" || command == "D"){
 
-        instruction = "\n\nEnter the angle you'd like to turn in degrees\n";
-        confirmationMessage = "\n\nThanks you've set the angle in degrees to ";
-        number = get_md_number();
-        angle = number;
+    if (command == "A" || command == "D"){
 
-        if (number>0){
-          Serial.print (confirmationMessage);
-          Serial.println (number);
-          Serial.print("\n\nmoving...\n\n");
-          delay(1000);
-        }
+      instruction = "\n\nEnter the angle you'd like to turn in degrees\n";
+      confirmationMessage = "\n\nThanks you've set the angle in degrees to ";
+      number = get_md_number();
+      angle = number;
 
-        if (command == "A"){
-          moveSteps = calculateAngleSteps(angle);
-          turnAntiClockWise();
-        }
-        else if (command == "D") {
-          moveSteps = calculateAngleSteps(angle);
-          turnClockWise();
-        }
+      if (number>0){
+        Serial.print (confirmationMessage);
+        Serial.println (number);
+        Serial.print("\n\nType 'Q' and press enter to stop motion\n\nmoving...\n\n");
+        delay(1000);
       }
-      else if (command == "W" || command == "S") {
 
-        instruction = "\n\nEnter the distance you'd like to move in mm\n";
-        confirmationMessage = "\n\nThanks you've set the distance in mm to ";
-        number = get_md_number();
-        distanceInMM = number;
+      if (command == "A"){
+        moveSteps = calculateAngleSteps(angle);
+        turnAntiClockWise();
+      }
+      else if (command == "D") {
+        moveSteps = calculateAngleSteps(angle);
+        turnClockWise();
+      }
+    }
+    else if (command == "W" || command == "S") {
 
-        if (number>0){
-          Serial.print (confirmationMessage);
-          Serial.println (number);
-          Serial.print("\n\nmoving...\n\ntype 'S' and press enter to stop move\n\n");
-          delay(1000);
-        }
+      instruction = "\n\nEnter the distance you'd like to move in mm\n";
+      confirmationMessage = "\n\nThanks you've set the distance in mm to ";
+      number = get_md_number();
+      distanceInMM = number;
 
-        if (command == "W"){
-          moveSteps = calculateDistanceSteps(distanceInMM);
-          forwards();
-        }
-        else if (command == "S") {
-          moveSteps = calculateDistanceSteps(distanceInMM);
-          reverse();
+      if (number>0){
+        Serial.print (confirmationMessage);
+        Serial.println (number);
+        Serial.print("\n\nType 'Q' and press enter to stop motion\n\nmoving...\n\n");
+        delay(1000);
+      }
+
+      if (command == "W"){
+        moveSteps = calculateDistanceSteps(distanceInMM);
+        forwards();
+      }
+      else if (command == "S") {
+        moveSteps = calculateDistanceSteps(distanceInMM);
+        reverse();
       }
     }
     else if (command == "X") {
@@ -287,9 +292,16 @@ void loop(){
       confirmationMessage = "\n\nThanks you've set the speed to ";
       number = get_md_number();
       motorDelay = motorDelayCalc();
-      Serial.print(motorDelay);
-      }
+      Serial.print (confirmationMessage);
+      Serial.println (number);
+    }
+    else if (command == "R"){
+      Serial.print("\n\nRepeating last action\n\nmoving...\n\n");
+      moveSteps=repeatCount;
+      commandTrigger=0;
+    }
   }
+  repeatCount = moveCount;
 
   while (moveCount<moveSteps) {
 
@@ -302,9 +314,32 @@ void loop(){
         String input = "";
         input = char(incoming);
         input.toUpperCase();
-        if (input == "S") {
+        if (input == "Q") {
+          Serial.print("\n\nMovement has been stopped!\n\n");
           moveCount=1;
           moveSteps = 1;
+          delay(1000);
+        }
+        else if (input == "A") {
+          turnAntiClockWise();
+        }
+        else if (input == "D") {
+          turnClockWise();
+        }
+        else if (input == "W") {
+          forwards();
+        }
+        else if (input == "S") {
+          reverse();
+        }
+        else if (input == "X") {
+
+          instruction = "\n\nEnter the speed you'd like to set from 0-10\n";
+          confirmationMessage = "\n\nThanks you've set the speed to ";
+          number = get_md_number();
+          motorDelay = motorDelayCalc();
+          Serial.print (confirmationMessage);
+          Serial.println (number);
         }
         else{
             while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
@@ -313,6 +348,7 @@ void loop(){
       }
     }
   }
+  repeatCount=moveSteps;
   moveCount = 0;
   moveSteps = 0;
   angle = 0;
