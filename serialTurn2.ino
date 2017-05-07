@@ -1,13 +1,10 @@
 /*
-
   Moves the robot forwads, backswards, left or right
-  and set speed useing srial commands
-
+  and set speed useing serial commands.
+  Has stop move in situ feature
   Dileepa Ranawake)
-
   April 2017
-  Version 2.1
-
+  Version 2.2
  */
 
 int motorDelay;
@@ -28,6 +25,7 @@ int moveSteps;// number of steps the motor is to move
 int angle;
 int distanceInMM;
 int distance;
+int speed;
 
 int number = 0;
 String command = "";
@@ -52,7 +50,7 @@ String get_command(void) {
     input = char(incoming);
     input.toUpperCase();
 
-    if (input == "A" ||input == "D" ||input == "S" ||input == "W" ) { //looks for a value ( valid number - outside 0 -9) in the specified askii range
+    if (input == "A" ||input == "D" ||input == "S" ||input == "W"||input == "X" ) { //looks for a value ( valid number - outside 0 -9) in the specified askii range
 
       command = input;
       Serial.print ("\n\nThanks this command you've chosen is: ");
@@ -107,6 +105,13 @@ int get_md_number(void) {
   return number;
 }
 
+int motorDelayCalc(void){
+  if (number>10){
+    number = number/number;
+  }
+  motorDelay = 2200-(1000*number/10);
+  return motorDelay;
+}
 
 void turnAntiClockWise(){
   left1=4; left2=5; left3=6; left4=7;
@@ -150,6 +155,51 @@ int calculateDistanceSteps(float distanceInMM){
 
 int calculateAngleSteps (float angle){
   return stepsPerTurn / 360 * angle + 0.5;
+}
+
+void move(){
+  digitalWrite(left2,HIGH);
+  digitalWrite(right2,HIGH);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left1,LOW);
+  digitalWrite(right1,LOW);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left3,HIGH);
+  digitalWrite(right3,HIGH);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left2,LOW);
+  digitalWrite(right2,LOW);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left4,HIGH);
+  digitalWrite(right4,HIGH);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left3,LOW);
+  digitalWrite(right3,LOW);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left1,HIGH);
+  digitalWrite(right1,HIGH);
+  delayMicroseconds(motorDelay);
+  digitalWrite(left4,LOW);
+  digitalWrite(right4,LOW);
+  delayMicroseconds(motorDelay);
+}
+
+int stopMove(){
+  if (Serial.available() > 0) {
+
+      byte incoming = Serial.read();
+      String input = "";
+      input = char(incoming);
+      input.toUpperCase();
+      if (input == "S") {
+        return moveCount==moveSteps;
+      }
+      else{
+          while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
+          Serial.read(); delay (100);
+      }
+    }
+  }
 }
 
 void setup() {
@@ -218,7 +268,7 @@ void loop(){
         if (number>0){
           Serial.print (confirmationMessage);
           Serial.println (number);
-          Serial.print("\n\nmoving...\n\n");
+          Serial.print("\n\nmoving...\n\ntype 'S' and press enter to stop move\n\n");
           delay(1000);
         }
 
@@ -231,36 +281,37 @@ void loop(){
           reverse();
       }
     }
+    else if (command == "X") {
+
+      instruction = "\n\nEnter the speed you'd like to set from 0-10\n";
+      confirmationMessage = "\n\nThanks you've set the speed to ";
+      number = get_md_number();
+      motorDelay = motorDelayCalc();
+      Serial.print(motorDelay);
+      }
   }
 
   while (moveCount<moveSteps) {
 
     moveCount = moveCount + 1;
 
-    digitalWrite(left2,HIGH);
-    digitalWrite(right2,HIGH);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left1,LOW);
-    digitalWrite(right1,LOW);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left3,HIGH);
-    digitalWrite(right3,HIGH);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left2,LOW);
-    digitalWrite(right2,LOW);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left4,HIGH);
-    digitalWrite(right4,HIGH);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left3,LOW);
-    digitalWrite(right3,LOW);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left1,HIGH);
-    digitalWrite(right1,HIGH);
-    delayMicroseconds(motorDelay);
-    digitalWrite(left4,LOW);
-    digitalWrite(right4,LOW);
-    delayMicroseconds(motorDelay);
+    move();
+    if (Serial.available() > 0) {
+
+        byte incoming = Serial.read();
+        String input = "";
+        input = char(incoming);
+        input.toUpperCase();
+        if (input == "S") {
+          moveCount=1;
+          moveSteps = 1;
+        }
+        else{
+            while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
+            Serial.read(); delay (100);
+        }
+      }
+    }
   }
   moveCount = 0;
   moveSteps = 0;
