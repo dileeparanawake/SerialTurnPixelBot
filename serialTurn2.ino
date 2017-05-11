@@ -39,7 +39,7 @@ int commandTrigger = 0;
 String get_command(void) {
 
   command = "";
-  Serial.print("\nType a command and press enter\n\n\rA = Turn Left.\n\rD = Turn Right.\nW = Move Forward.\nS = Move Backwards.\nX = Set speed.\nR = Repeat last action.\n");
+  Serial.print("\nType a command and press enter\n\nA = Turn Left.\nD = Turn Right.\nW = Move Forward.\nS = Move Backwards.\nX = Set speed.\nR = Repeat last action.\n");
 
   while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
     Serial.read(); delay (100);
