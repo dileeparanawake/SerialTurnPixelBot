@@ -1,12 +1,13 @@
 /*
   Moves the robot forwads, backswards, left or right
   and set speed useing serial commands.
-  Has stop move in situ feature
+  Has improved stop move in situ feature
   Has repeat last action feature
   Has dynamic change of instruction in motion
   Dileepa Ranawake)
   May 2017
-  Version 2.7
+  Version 2.8
+
  */
 
 int motorDelay;
@@ -42,6 +43,7 @@ String get_command(void) {
   Serial.print("\nType a command and press enter\n\nA = Turn Left.\nD = Turn Right.\nW = Move Forward.\nS = Move Backwards.\nX = Set speed.\nR = Repeat last action.\n");
 
   while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
+
     Serial.read(); delay (100);
   }
   while(Serial.available() == 0) {/*do nothing*/}
@@ -187,28 +189,20 @@ void move(){
   delayMicroseconds(motorDelay);
 }
 
+//problem function - this should stop motion by making the while loop untrue - wasn't working becuase of the == instead of =
 int stopMove(){
-  if (Serial.available() > 0) {
-
-      byte incoming = Serial.read();
-      String input = "";
-      input = char(incoming);
-      input.toUpperCase();
-      if (input == "S") {
-        return moveCount==moveSteps;
-      }
-      else{
-          while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
-          Serial.read(); delay (100);
-      }
-    }
+  moveCount=moveSteps;
+  Serial.print("\n\nMovement has been stopped!\n\n");
+  while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
+    Serial.read(); delay (100);
   }
 }
+
 
 void setup() {
 
   while(Serial.available() > 0) {  //flush the buffer to prevent junk data being passed anywhere if greater than 0
-  Serial.read(); delay (100);
+    Serial.read(); delay (100);
   }
   leftForwards();
   rightForwards();
@@ -309,16 +303,13 @@ void loop(){
 
     move();
     if (Serial.available() > 0) {
-
         byte incoming = Serial.read();
         String input = "";
         input = char(incoming);
         input.toUpperCase();
+
         if (input == "Q") {
-          Serial.print("\n\nMovement has been stopped!\n\n");
-          moveCount=1;
-          moveSteps = 1;
-          delay(1000);
+          stopMove();
         }
         else if (input == "A") {
           turnAntiClockWise();
@@ -333,7 +324,6 @@ void loop(){
           reverse();
         }
         else if (input == "X") {
-
           instruction = "\n\nEnter the speed you'd like to set from 0-10\n";
           confirmationMessage = "\n\nThanks you've set the speed to ";
           number = get_md_number();
